@@ -1,0 +1,47 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Lab Report</title>
+<style>
+*{box-sizing:border-box;margin:0}
+body{width:1440px;height:900px;overflow:hidden;font:14px/1.45 "Segoe UI",system-ui,sans-serif;color:#14243a;background:#e9eef4}
+header{background:#14365c;color:#fff;height:72px;display:flex;align-items:center;gap:40px;padding:0 28px}
+header .brand{font-size:24px;font-weight:700}header nav{display:flex;gap:22px;opacity:.85}header nav .on{opacity:1;border-bottom:2px solid #fff;padding-bottom:4px}
+.wrap{display:grid;grid-template-columns:420px 1fr;gap:20px;padding:20px 28px;height:828px}
+.list,.report{background:#fff;border:1px solid #cfd8e3;border-radius:4px;overflow:hidden}
+.list h2,.report h2{font-size:22px;padding:16px 18px;border-bottom:1px solid #cfd8e3}
+.row{display:grid;grid-template-columns:30px 1fr 60px;padding:11px 18px;border-bottom:1px solid #edf1f5;align-items:center}
+.row.on{background:#eaf1f9;box-shadow:inset 3px 0 #14365c}.row b{font-variant-numeric:tabular-nums;text-align:right;font-size:18px}
+.sub{color:#5b6b80;font-size:12px}
+.rhead{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid #cfd8e3}
+.rhead div{padding:12px 18px;border-right:1px solid #edf1f5}.rhead strong{display:block;font-size:24px}
+table{width:100%;border-collapse:collapse}
+th{background:#f3f6f9;font-size:11px;text-transform:uppercase;letter-spacing:.06em;text-align:left;padding:9px 18px;color:#5b6b80}
+td{padding:10px 18px;border-bottom:1px solid #edf1f5;vertical-align:top}
+.flag{font-weight:700;font-size:12px;padding:2px 8px;border-radius:3px}
+.met{background:#dff3e9;color:#0f7b4d}.part{background:#fff1d6;color:#8a5a00}.nf{background:#fde4e2;color:#b42318}
+.q{font-size:13px;color:#33465e}
+.sign{display:flex;justify-content:space-between;padding:14px 18px;color:#5b6b80;font-size:12px;border-top:1px solid #cfd8e3}
+</style></head><body>
+<header><span class="brand">SmartHR</span><nav><span class="on">Senior Backend Engineer</span><span>Intern AI Engineer</span><span>Needs attention (4)</span></nav></header>
+<div class="wrap">
+<section class="list"><h2>Ranked · 129 scored</h2>
+<div class="row on"><span>1</span><div>Candidate 0142<div class="sub">Strong fit · 2/2 must-haves</div></div><b>91</b></div>
+<div class="row"><span>2</span><div>Candidate 0087<div class="sub">Strong fit · 2/2 must-haves</div></div><b>86</b></div>
+<div class="row"><span>3</span><div>Candidate 0211<div class="sub">Strong fit · 2/2 must-haves</div></div><b>79</b></div>
+<div class="row"><span>4</span><div>Candidate 0019<div class="sub">Possible fit · 2/2 must-haves</div></div><b>69</b></div>
+<div class="row"><span>5</span><div>Candidate 0176<div class="sub">Must-have missing · 1/2</div></div><b>64</b></div>
+<div class="row"><span>6</span><div>Candidate 0093<div class="sub">Possible fit · 2/2 must-haves</div></div><b>58</b></div>
+<div class="row"><span>7</span><div>Candidate 0058<div class="sub">Must-have missing · 1/2</div></div><b>51</b></div>
+<div class="row"><span>8</span><div>Candidate 0130<div class="sub">Possible fit · 2/2 must-haves</div></div><b>47</b></div>
+</section>
+<section class="report"><h2>Candidate 0142 — evidence report</h2>
+<div class="rhead"><div>Fit<strong>91</strong></div><div>Coverage<strong>0.93</strong></div><div>Semantic<strong>0.86</strong></div><div>Band<strong>Strong fit</strong></div></div>
+<table><tr><th>Requirement</th><th>Observed in resume</th><th>Flag</th><th>Wt</th></tr>
+<tr><td>S1 C# and .NET Core backend</td><td class="q">“Built REST APIs in ASP.NET Core 8 for order and billing services.”</td><td><span class="flag met">MET</span></td><td>5</td></tr>
+<tr><td>S2 Builds REST APIs</td><td class="q">“Built REST APIs in ASP.NET Core 8 for order and billing services.”</td><td><span class="flag met">MET</span></td><td>4</td></tr>
+<tr><td>S4 Entity Framework with SQL</td><td class="q">“Tuned EF Core queries and SQL Server indexes.”</td><td><span class="flag met">MET</span></td><td>3</td></tr>
+<tr><td>S5 RabbitMQ / MassTransit</td><td class="q">“Event-driven integration using RabbitMQ consumers.”</td><td><span class="flag part">PARTIAL</span></td><td>3</td></tr>
+<tr><td>S6 Azure and Azure Pipelines</td><td class="q">“Release pipelines in Azure DevOps deploying to AKS.”</td><td><span class="flag met">MET</span></td><td>3</td></tr>
+<tr><td>S10 Industrial automation</td><td class="q">No supporting line</td><td><span class="flag nf">NOT FOUND</span></td><td>1</td></tr>
+</table>
+<div class="sign"><span>Rubric v1 · bge-small-en-v1.5 · MiniLM reranker</span><span>Reviewed by: ________ (HR)</span></div>
+</section></div></body></html>

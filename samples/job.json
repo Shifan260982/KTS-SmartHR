@@ -1,0 +1,16 @@
+{
+  "job": {
+    "code": "JOB-1023",
+    "title": "Backend Engineer",
+    "description": "We are hiring a backend engineer to build and run REST APIs in ASP.NET Core on Azure, backed by SQL Server. You will tune queries, design services and work with CI/CD pipelines."
+  },
+  "rubric": {
+    "requirements": [
+      { "id": "R1", "text": "Builds REST APIs in ASP.NET Core", "type": "must", "weight": 5 },
+      { "id": "R2", "text": "4+ years professional backend experience", "type": "must", "weight": 4 },
+      { "id": "R3", "text": "SQL Server query tuning", "type": "nice", "weight": 2 },
+      { "id": "R4", "text": "Bachelor's degree in Computer Science or related", "type": "nice", "weight": 1 },
+      { "id": "R5", "text": "Deploys services to Azure using CI/CD pipelines", "type": "nice", "weight": 2 }
+    ]
+  }
+}

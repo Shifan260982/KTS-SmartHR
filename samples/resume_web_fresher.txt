@@ -1,0 +1,16 @@
+Arjun Nair (synthetic sample)
+arjun.nair@example.com | Thane
+
+EDUCATION
+B.Sc. Information Technology, University of Mumbai, 2026 — 72%
+
+PROJECTS
+- Built a college events website with React and Node.js, with login and an admin dashboard.
+- Created a personal portfolio site and a to-do app using JavaScript and Firebase.
+
+EXPERIENCE
+Front-end Intern, PixelCraft Studio (Jan 2026 - Mar 2026)
+- Converted Figma designs into responsive pages with HTML, CSS and React.
+
+SKILLS
+JavaScript, React, Node.js, HTML, CSS, Firebase, Git

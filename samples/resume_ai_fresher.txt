@@ -1,0 +1,18 @@
+Priya Desai (synthetic sample)
+priya.desai@example.com | Navi Mumbai
+
+EDUCATION
+B.E. Computer Engineering, University of Mumbai, 2026 — CGPA 9.1/10
+
+PROJECTS
+- Built a sentiment classifier for product reviews in Python with Pandas, NumPy and scikit-learn; cleaned and pre-processed 40,000 reviews.
+- Trained a CNN in TensorFlow to detect defects in PCB images, reaching 94% validation accuracy.
+- Deployed the defect model as a FastAPI service in Docker for the college robotics lab.
+
+INTERNSHIP
+Data Analyst Intern, FinSight Analytics (May 2025 - Jul 2025)
+- Analysed transaction data with SQL and Pandas and presented weekly findings to the client team.
+
+SKILLS
+Python, NumPy, Pandas, TensorFlow, scikit-learn, SQL, Git
+Presented two papers at the college tech fest; strong written and verbal communication.

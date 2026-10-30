@@ -1,0 +1,61 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Marked Answer Script</title>
+<style>
+*{box-sizing:border-box;margin:0}
+body{width:1440px;height:900px;overflow:hidden;font:14px/1.45 "Segoe UI",system-ui,sans-serif;color:#1c2a52;background:#f7f9fb;display:grid;grid-template-columns:240px 1fr}
+.rail{background:#1f6f6b;color:#e7f3f1;padding:22px 16px;display:flex;flex-direction:column;gap:6px}
+.brand{font-size:24px;font-weight:700;color:#fff;margin-bottom:18px}
+.rail h4{font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.7;margin:10px 0 4px}
+.job{padding:10px;border-radius:6px}.job.on{background:#165956;box-shadow:inset 3px 0 #f2c94c}
+.job b{display:block;color:#fff;font-size:14px}.job small{opacity:.75}
+.bar{height:4px;background:#2c8a84;border-radius:2px;margin-top:6px}.bar i{display:block;height:4px;background:#f2c94c;border-radius:2px}
+.attn{margin-top:auto;background:#165956;padding:10px;border-radius:6px}
+main{padding:24px 28px;display:grid;grid-template-columns:1fr 430px;gap:22px;overflow:hidden}
+.head{grid-column:1/-1;display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid #d9e1ea;padding-bottom:14px}
+h1{font-size:28px;line-height:1.15}.meta{color:#56627f;margin-top:4px}
+.btn{background:#1c2a52;color:#fff;padding:10px 16px;border-radius:6px;font-weight:600}
+.tabs{display:flex;gap:6px;margin-bottom:12px}.tabs span{padding:6px 12px;border:1px solid #d9e1ea;border-radius:16px;background:#fff}
+.tabs .on{background:#1c2a52;color:#fff;border-color:#1c2a52}
+table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #d9e1ea}
+th{font-size:11px;text-align:left;color:#56627f;padding:8px;border-bottom:1px solid #d9e1ea;font-weight:600}
+td{padding:9px 8px;border-bottom:1px solid #eef2f6;vertical-align:middle}
+tr.sel{background:#eef6f5;box-shadow:inset 3px 0 #1f6f6b}
+.fit{font-size:24px;font-weight:700;color:#c8312b;border:2px solid #c8312b;border-radius:4px;padding:0 6px;font-variant-numeric:tabular-nums}
+.delta{font-size:12px;color:#56627f}
+.marks{display:flex;gap:3px}.m{width:16px;height:16px;border:1.5px solid #1c2a52;border-radius:2px}
+.m.met{background:#1c2a52}.m.part{background:repeating-linear-gradient(45deg,#1c2a52 0 2px,transparent 2px 5px)}
+.m.must{outline:1.5px solid #c8312b;outline-offset:1px}
+.band{font-size:12px;font-weight:600;padding:2px 8px;border-radius:10px;background:#e5f2ef;color:#1f6f6b}.band.miss{background:#fbe7c2;color:#7a4e00}
+.paper{background:#fff;border:1px solid #d9e1ea;border-radius:6px;padding:18px;display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.score{display:flex;align-items:center;gap:14px;border-bottom:1px solid #eef2f6;padding-bottom:12px}
+.big{font-size:44px;font-weight:700;color:#c8312b;border:3px solid #c8312b;padding:0 10px;border-radius:4px;font-variant-numeric:tabular-nums}
+.line{display:grid;grid-template-columns:1fr 64px;gap:10px;align-items:start}
+.line p{font-size:13px}.line mark{background:#fff4c2;padding:0 2px}
+.margin{color:#c8312b;font-weight:700;font-size:13px;border-left:2px solid #f1c7c4;padding-left:8px}
+</style></head><body>
+<nav class="rail"><div class="brand">SmartHR</div>
+<h4>Jobs</h4>
+<div class="job on"><b>Senior Backend Engineer</b><small>KTS-SE1 · 129 resumes</small><div class="bar"><i style="width:100%"></i></div></div>
+<div class="job"><b>Intern AI Engineer</b><small>KTS-AI-INTERN · 48 resumes</small><div class="bar"><i style="width:37%"></i></div></div>
+<div class="job"><b>+ New job</b><small>Paste a JD to start</small></div>
+<div class="attn"><b>Needs attention · 4</b><br><small>Scanned files, no text found</small></div></nav>
+<main>
+<div class="head"><div><h1>Senior Backend Engineer — C#, .NET Core</h1><div class="meta">KTS-SE1 · Rubric v1 approved · 129 scored · sample data</div></div><span class="btn">Upload resumes</span></div>
+<section><div class="tabs"><span class="on">All 129</span><span>Strong fit 31</span><span>Possible fit 52</span><span>Must-have missing 42</span><span>Needs attention 4</span></div>
+<table><tr><th>#</th><th>Candidate</th><th>Fit</th><th>Next band</th><th>Marks S1–S11</th><th>Band</th></tr>
+<tr class="sel"><td>1</td><td>Candidate 0142</td><td><span class="fit">91</span></td><td class="delta">top band</td><td><div class="marks"><i class="m met must"></i><i class="m met must"></i><i class="m met"></i><i class="m met"></i><i class="m part"></i><i class="m met"></i><i class="m met"></i><i class="m part"></i><i class="m met"></i><i class="m"></i><i class="m part"></i></div></td><td><span class="band">Strong fit</span></td></tr>
+<tr><td>2</td><td>Candidate 0087</td><td><span class="fit">86</span></td><td class="delta">top band</td><td><div class="marks"><i class="m met must"></i><i class="m met must"></i><i class="m met"></i><i class="m part"></i><i class="m"></i><i class="m met"></i><i class="m met"></i><i class="m met"></i><i class="m part"></i><i class="m"></i><i class="m"></i></div></td><td><span class="band">Strong fit</span></td></tr>
+<tr><td>3</td><td>Candidate 0211</td><td><span class="fit">79</span></td><td class="delta">top band</td><td><div class="marks"><i class="m met must"></i><i class="m met must"></i><i class="m part"></i><i class="m met"></i><i class="m"></i><i class="m part"></i><i class="m met"></i><i class="m"></i><i class="m met"></i><i class="m"></i><i class="m"></i></div></td><td><span class="band">Strong fit</span></td></tr>
+<tr><td>4</td><td>Candidate 0019</td><td><span class="fit">69</span></td><td class="delta">−6 to Strong</td><td><div class="marks"><i class="m met must"></i><i class="m met must"></i><i class="m part"></i><i class="m part"></i><i class="m"></i><i class="m part"></i><i class="m met"></i><i class="m"></i><i class="m"></i><i class="m"></i><i class="m part"></i></div></td><td><span class="band">Possible fit</span></td></tr>
+<tr><td>5</td><td>Candidate 0176</td><td><span class="fit">64</span></td><td class="delta">−11 to Strong</td><td><div class="marks"><i class="m part must"></i><i class="m met must"></i><i class="m met"></i><i class="m met"></i><i class="m"></i><i class="m met"></i><i class="m part"></i><i class="m"></i><i class="m"></i><i class="m"></i><i class="m"></i></div></td><td><span class="band miss">Must-have missing</span></td></tr>
+<tr><td>6</td><td>Candidate 0093</td><td><span class="fit">58</span></td><td class="delta">−17 to Strong</td><td><div class="marks"><i class="m met must"></i><i class="m met must"></i><i class="m"></i><i class="m part"></i><i class="m"></i><i class="m part"></i><i class="m part"></i><i class="m"></i><i class="m part"></i><i class="m"></i><i class="m"></i></div></td><td><span class="band">Possible fit</span></td></tr>
+<tr><td>7</td><td>Candidate 0058</td><td><span class="fit">51</span></td><td class="delta">−24 to Strong</td><td><div class="marks"><i class="m met must"></i><i class="m part must"></i><i class="m part"></i><i class="m"></i><i class="m"></i><i class="m met"></i><i class="m"></i><i class="m"></i><i class="m"></i><i class="m"></i><i class="m"></i></div></td><td><span class="band miss">Must-have missing</span></td></tr>
+</table></section>
+<aside class="paper"><div class="score"><span class="big">91</span><div><b>Candidate 0142</b><br><span class="delta">Coverage 0.93 · Semantic 0.86 · Must-haves 2/2</span></div></div>
+<div class="line"><p><mark>Built REST APIs in ASP.NET Core 8 for order and billing services used by UK clients.</mark></p><span class="margin">✓ S1 S2</span></div>
+<div class="line"><p><mark>Tuned EF Core queries and SQL Server indexes, cutting report time from 40 s to 6 s.</mark></p><span class="margin">✓ S4</span></div>
+<div class="line"><p><mark>Event-driven integration using RabbitMQ consumers for warehouse robots.</mark></p><span class="margin">½ S5</span></div>
+<div class="line"><p><mark>Release pipelines in Azure DevOps deploying Docker images to AKS.</mark></p><span class="margin">✓ S6 S7</span></div>
+<div class="line"><p>Mentored two graduate engineers through their first production releases.</p><span class="margin">½ S11</span></div>
+<div class="line"><p>No line found for factory or industrial automation.</p><span class="margin">✗ S10</span></div>
+</aside></main></body></html>

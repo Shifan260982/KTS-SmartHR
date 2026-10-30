@@ -1,0 +1,34 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Gate Board</title>
+<style>
+*{box-sizing:border-box;margin:0}
+body{width:1440px;height:900px;overflow:hidden;font:14px/1.45 "Segoe UI",system-ui,sans-serif;background:#f4f5f7;color:#111418}
+.top{background:#111418;color:#f4f5f7;display:flex;align-items:center;gap:28px;padding:0 28px;height:64px}
+.top b{font-size:22px}.top span{opacity:.75}.top .on{opacity:1;color:#ffd23f}
+.board{margin:20px 28px 0;background:#111418;color:#f4f5f7;border-radius:8px;overflow:hidden}
+.bh{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid #2a2f36}
+.bh h1{font-size:28px}.bh small{color:#9aa3ad}
+.cols,.r{display:grid;grid-template-columns:70px 1fr 120px 200px 240px 180px;padding:0 22px;align-items:center}
+.cols{font-size:11px;letter-spacing:.1em;color:#9aa3ad;text-transform:uppercase;height:36px;border-bottom:1px solid #2a2f36}
+.r{height:58px;border-bottom:1px solid #22272d;font-variant-numeric:tabular-nums}
+.r .n{font-size:24px;color:#9aa3ad}.r .fit{font-size:26px;font-weight:700}
+.r.moved{background:#2a2510;box-shadow:inset 4px 0 #ffd23f}.r.moved .note{color:#ffd23f}
+.pill{font-size:12px;font-weight:600;border:1px solid #4a525c;border-radius:4px;padding:3px 8px}
+.pill.s{border-color:#2f80ed;color:#8fbcff}.pill.m{border-color:#ffd23f;color:#ffd23f}
+.note{font-size:12px;color:#9aa3ad}
+.dots{letter-spacing:3px;font-size:16px}
+</style></head><body>
+<div class="top"><b>SmartHR</b><span class="on">Senior Backend Engineer</span><span>Intern AI Engineer</span><span>Needs attention 4</span></div>
+<div class="board"><div class="bh"><h1>KTS-SE1 · Senior Backend Engineer</h1><small>129 scored · rubric v1 · thresholds changed 2 min ago · sample data</small></div>
+<div class="cols"><span>Rank</span><span>Candidate</span><span>Fit</span><span>Band</span><span>Must-haves · S1–S11</span><span>Status</span></div>
+<div class="r"><span class="n">01</span><span>Candidate 0142</span><span class="fit">91</span><span><span class="pill s">STRONG FIT</span></span><span class="dots">●● ●●◐●●◐●○◐</span><span class="note">On time</span></div>
+<div class="r moved"><span class="n">02</span><span>Candidate 0087</span><span class="fit">86</span><span><span class="pill s">STRONG FIT</span></span><span class="dots">●● ●◐○●●●◐○○</span><span class="note">▲ 3 after rescore</span></div>
+<div class="r"><span class="n">03</span><span>Candidate 0211</span><span class="fit">79</span><span><span class="pill s">STRONG FIT</span></span><span class="dots">●● ◐●○◐●○●○○</span><span class="note">On time</span></div>
+<div class="r"><span class="n">04</span><span>Candidate 0019</span><span class="fit">69</span><span><span class="pill">POSSIBLE</span></span><span class="dots">●● ◐◐○◐●○○○◐</span><span class="note">−6 to strong</span></div>
+<div class="r moved"><span class="n">05</span><span>Candidate 0176</span><span class="fit">64</span><span><span class="pill m">MUST-HAVE MISSING</span></span><span class="dots">◐● ●●○●◐○○○○</span><span class="note">▼ 2 after rescore</span></div>
+<div class="r"><span class="n">06</span><span>Candidate 0093</span><span class="fit">58</span><span><span class="pill">POSSIBLE</span></span><span class="dots">●● ○◐○◐◐○◐○○</span><span class="note">−17 to strong</span></div>
+<div class="r"><span class="n">07</span><span>Candidate 0058</span><span class="fit">51</span><span><span class="pill m">MUST-HAVE MISSING</span></span><span class="dots">●◐ ◐○○●○○○○○</span><span class="note">−24 to strong</span></div>
+<div class="r"><span class="n">08</span><span>Candidate 0130</span><span class="fit">47</span><span><span class="pill">POSSIBLE</span></span><span class="dots">●● ○○○◐○○◐○○</span><span class="note">−28 to strong</span></div>
+<div class="r"><span class="n">09</span><span>Candidate 0064</span><span class="fit">41</span><span><span class="pill">POSSIBLE</span></span><span class="dots">●● ○○○○◐○○○○</span><span class="note">−34 to strong</span></div>
+<div class="r"><span class="n">10</span><span>Candidate 0101</span><span class="fit">33</span><span><span class="pill m">MUST-HAVE MISSING</span></span><span class="dots">◐○ ○○○○○○○○○</span><span class="note">below floor</span></div>
+</div></body></html>

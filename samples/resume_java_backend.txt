@@ -1,0 +1,20 @@
+Rohan Mehta (synthetic sample)
+rohan.mehta@example.com | Bengaluru
+
+PROFILE
+Java developer focused on backend services and data pipelines.
+
+WORK HISTORY
+Backend Developer, CloudCart (Mar 2021 - Present)
+- Designed and maintained Spring Boot microservices exposing JSON HTTP endpoints for the catalogue team.
+- Optimised PostgreSQL queries and added indexes to speed up the search service.
+- Deployed services to AWS with GitHub Actions and Terraform.
+
+Associate Engineer, DataWorks (Aug 2019 - Feb 2021)
+- Wrote batch ETL jobs in Java and Apache Spark.
+
+EDUCATION
+B.Tech Information Technology, VIT Vellore, 2019
+
+SKILLS
+Java, Spring Boot, PostgreSQL, Kafka, AWS, Terraform, GitHub Actions

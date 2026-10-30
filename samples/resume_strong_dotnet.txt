@@ -1,0 +1,24 @@
+Asha Kulkarni (synthetic sample)
+asha.k@example.com | +91 98200 00000 | Pune
+
+SUMMARY
+Backend engineer with six years building web services for fintech and retail clients.
+
+EXPERIENCE
+Senior Software Engineer, PayLane Technologies (Jan 2022 - Present)
+- Built 14 REST APIs using ASP.NET Core 8 serving 2M requests a day for payments and refunds.
+- Wrote stored procedures and tuned slow SQL Server queries with execution plans and indexing, cutting p95 latency by 60%.
+- Set up Azure DevOps pipelines that deploy containers to Azure App Service with blue/green slots.
+
+Software Engineer, ShopKart (Jun 2019 - Dec 2021)
+- Developed microservices in C# and .NET Core for the order management platform.
+- Owned integration with third-party logistics partners through webhooks and message queues.
+
+Junior Developer, Infobyte Solutions (Jul 2018 - May 2019)
+- Maintained an internal reporting tool written in C# and Entity Framework.
+
+EDUCATION
+B.E. Computer Engineering, Savitribai Phule Pune University, 2018
+
+SKILLS
+C#, ASP.NET Core, Entity Framework Core, SQL Server, Azure, Docker, Redis, xUnit
