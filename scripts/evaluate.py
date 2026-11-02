@@ -9,7 +9,6 @@ import csv
 import hashlib
 import itertools
 import json
-import sqlite3
 import sys
 import time
 import uuid
@@ -115,15 +114,14 @@ def rescore(evidence: list[dict], settings: dict, met: float, partial: float) ->
 
 
 def report(specs: list[dict], origin: dict[str, set[str]]) -> None:
-    conn = sqlite3.connect(f"file:{db.DB_PATH}?mode=ro", uri=True)
-    conn.row_factory = sqlite3.Row
+    d = db.database()
     for spec in specs:
-        rows = conn.execute("""SELECT a.status, a.fit_score, a.band, a.evidence, d.sha256, d.chunks, d.embeddings, j.settings
-                               FROM applications a JOIN documents d ON d.id = a.document_id JOIN jobs j ON j.id = a.job_id
-                               WHERE j.code = ?""", (spec["code"],)).fetchall()
+        job = d.jobs.find_one({"code": spec["code"]})
+        shas = {doc["_id"]: doc["sha256"] for doc in d.documents.find({}, {"sha256": 1})}
+        rows = [{**a, "sha256": shas[a["document_id"]]} for a in d.applications.find({"job_id": job["_id"]})]
         scored = [r for r in rows if r["status"] == "SCORED"]
         labels = [spec["resume_folder"] in origin.get(r["sha256"], set()) for r in scored]
-        settings = json.loads(scored[0]["settings"])
+        settings = job["settings"]
         n_pos = sum(labels)
         print(f"\n=== {spec['title']} ({spec['code']})")
         print(f"resumes scored: {len(scored)} | positives (from '{spec['resume_folder']}'): {n_pos} | "
@@ -139,13 +137,14 @@ def report(specs: list[dict], origin: dict[str, set[str]]) -> None:
         jd_vector = matching.embed([c["text"] for c in reader.chunk(jd_text)]).mean(axis=0)
         baseline = []
         for r in scored:
-            v =np.frombuffer(r["embeddings"], dtype=np.float32).reshape(len(json.loads(r["chunks"])), -1).mean(axis=0)
+            v = np.array([c["embedding"] for c in d.resume_chunks.find({"document_id": r["document_id"]}, {"embedding": 1})],
+                         dtype=np.float32).mean(axis=0)
             baseline.append(float(v @ jd_vector / (np.linalg.norm(v) * np.linalg.norm(jd_vector))))
         show("baseline: whole JD vs whole resume", baseline)
         show(f"rubric fit, current (met {settings['met_threshold']}, partial {settings['partial_similarity']})",
              [r["fit_score"] for r in scored])
 
-        evidences = [json.loads(r["evidence"]) for r in scored]
+        evidences = [r["evidence"] for r in scored]
         best = max(((m, p) for m in GRID_MET for p in GRID_PARTIAL),
                    key=lambda mp: auc(*[[rescore(e, settings, *mp)["fit_score"] for e, l in zip(evidences, labels) if l == want]
                                        for want in (True, False)]))

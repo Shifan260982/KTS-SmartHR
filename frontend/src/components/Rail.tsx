@@ -33,19 +33,6 @@ export function Rail() {
         <Plus size={16} aria-hidden="true" /> New job
       </Link>
       </div>
-      {!!jobs?.length && (
-        <>
-          <h2>Needs attention</h2>
-          <div className="rail-attn">
-            {jobs.map((job) => (
-              <Link key={job.id} to={`/jobs/${job.id}?band=attention`} className="rail-attn-item">
-                <span>{job.code}</span>
-                <b aria-label={`${job.attention_count} unreadable resumes`}>{job.attention_count}</b>
-              </Link>
-            ))}
-          </div>
-        </>
-      )}
       <p className="rail-foot">Scores rank resumes against each job's approved checklist. HR makes every decision.</p>
     </nav>
   )

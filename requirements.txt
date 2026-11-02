@@ -4,4 +4,6 @@ python-multipart
 fastembed
 pymupdf
 python-docx
+pymongo>=4.10
+python-dotenv
 pytest

@@ -8,7 +8,6 @@ import pymupdf
 
 ALLOWED_EXTENSIONS = {".pdf", ".docx", ".txt"}
 MIN_TEXT_CHARS = 200
-MIN_CHUNK_CHARS = 60
 MAX_CHUNK_CHARS = 400
 WHITE = 0xFFFFFF
 MIN_FONT_SIZE = 4
@@ -60,36 +59,78 @@ def _docx_text(data: bytes) -> str:
     return "\n".join(line.strip() for line in lines if line.strip())
 
 
+CHUNKER_VERSION = 2  # bump when chunking changes; stored chunks are rebuilt on the next start
+SECTION_WORDS = re.compile(
+    r"^(professional |personal |career |core |technical |key |selected |academic |work |relevant )*"
+    r"(summary|profile|objective|about me|experience|work history|employment|education|qualifications?|skills|"
+    r"competencies|projects?|certifications?|courses?|coursework|achievements|awards|publications|internships?|"
+    r"languages|extracurriculars?|activities|interests|hobbies|contact|references|tools|technologies)\b",
+    re.IGNORECASE)
+BULLET_START = re.compile(r"^\s*(?:[•●▪◦·*\-–�]\s*|\d{1,2}[.)]\s+)")
+LABEL_START = re.compile(r"^[A-Z][\w&/,.()+# -]{1,40}:(\s|$)")  # "Software & Integration: Flask, ..."
+ENTRY_LINE = re.compile(r"\s\|\s|\b(19|20)\d{2}\s*[-–]\s*((19|20)\d{2}|present|current|now)\b", re.IGNORECASE)
+SENTENCE = re.compile(r".+?(?:[.!?](?=\s)|$)", re.DOTALL)
+
+
+def _is_heading(line: str, after_first_section: bool) -> bool:
+    words = re.sub(r"[^A-Za-z&/ ]", "", line).strip()
+    if not words or len(line) > 50 or ENTRY_LINE.search(line) or ":" in line.rstrip(":"):
+        return False
+    if SECTION_WORDS.match(words) and len(words.split()) <= 5:
+        return True
+    # An all-caps line above the first real section is the candidate's name or title, which must never
+    # become context for the embeddings (no personal details in matching).
+    return after_first_section and line.isupper() and len(words) >= 4
+
+
 def chunk(text: str) -> list[dict]:
-    """Merge short lines, split long ones at sentence ends. Every chunk keeps its exact [start, end) offsets."""
-    units = []
-    for line in re.finditer(r"[^\n]+", text):
-        if len(line.group()) <= MAX_CHUNK_CHARS:
-            units.append((line.start(), line.end()))
-        else:
-            units.extend((line.start() + s.start(), line.start() + s.end())
-                         for s in re.finditer(r".+?(?:[.!?](?=\s)|$)", line.group()))
-
-    chunks, start, end = [], None, None
-    for unit_start, unit_end in units:
-        if not text[unit_start:unit_end].strip():
+    """Rebuild logical units from visual PDF lines: one bullet, one 'Label: items' line, one entry line or one
+    sentence group each, never crossing a section heading. Every chunk keeps its exact [start, end) offsets."""
+    units: list[list] = []  # [start, end, section]
+    section = ""
+    for match in re.finditer(r"[^\n]+", text):
+        line = match.group().strip()
+        if not line:
             continue
-        if start is not None and unit_end - start > MAX_CHUNK_CHARS:
-            chunks.append(_chunk(text, start, end))
-            start = None
-        if start is None:
-            start = unit_start
-        end = unit_end
-        if end - start >= MIN_CHUNK_CHARS:
-            chunks.append(_chunk(text, start, end))
-            start = None
-    if start is not None:
-        chunks.append(_chunk(text, start, end))
-    return chunks
+        start = match.start() + match.group().index(line[0])
+        if _is_heading(line, bool(section)):
+            section = line.rstrip(":").title()
+            units.append(None)  # hard break: nothing joins across a heading
+            continue
+        current = units[-1] if units else None
+        unfinished = current is not None and not re.search(r"[.!?]\s*$", text[current[0]:current[1]])
+        new_unit = BULLET_START.match(line) or LABEL_START.match(line) or ENTRY_LINE.search(line)
+        if current is not None and unfinished and not new_unit:
+            current[1] = match.end()  # wrapped line: continue the same sentence or bullet
+        else:
+            units.append([start, match.end(), section])
+
+    chunks = []
+    for unit in filter(None, units):
+        start, end, unit_section = unit
+        if end - start <= MAX_CHUNK_CHARS:
+            chunks.append(_chunk(text, start, end, unit_section))
+            continue
+        group_start = group_end = start  # long paragraph: pack whole sentences up to the size limit
+        for sentence in SENTENCE.finditer(text, start, end):
+            if sentence.end() - group_start > MAX_CHUNK_CHARS and group_end > group_start:
+                chunks.append(_chunk(text, group_start, group_end, unit_section))
+                group_start = sentence.start()
+            group_end = sentence.end()
+        chunks.append(_chunk(text, group_start, group_end, unit_section))
+    return [c for c in chunks if c["text"].strip()]
 
 
-def _chunk(text: str, start: int, end: int) -> dict:
-    return {"text": text[start:end], "start": start, "end": end}
+def _chunk(text: str, start: int, end: int, section: str = "") -> dict:
+    while start < end and text[start].isspace():
+        start += 1
+    return {"text": text[start:end], "start": start, "end": end, "section": section}
+
+
+def embedding_text(chunk: dict) -> str:
+    """What gets embedded: the section gives a bare line its meaning ("Education: BTech, EEE ...")."""
+    body = re.sub(r"\s+", " ", BULLET_START.sub("", chunk["text"])).strip()
+    return f"{chunk['section']}: {body}" if chunk.get("section") else body
 
 
 def quality(text: str, chunks: list[dict]) -> str:

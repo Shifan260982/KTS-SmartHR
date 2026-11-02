@@ -1,11 +1,11 @@
-"""Steps 5 and 7 of the design: hybrid search -> rerank -> score. No LLM.
+"""Steps 5 and 7 of the design: hybrid search (Atlas Vector Search + Atlas Search) -> rerank -> score. No LLM.
 
 Without the LLM verify step, the verdict comes from the reranker's probability and the quote is the
 matched chunk itself, so every quote exists in the resume by construction.
 """
 import math
 import os
-import re
+from collections.abc import Callable
 from functools import cache
 
 import numpy as np
@@ -47,50 +47,47 @@ def embed(texts: list[str]) -> np.ndarray:
     return vectors / np.linalg.norm(vectors, axis=1, keepdims=True)
 
 
-def tokens(text: str) -> list[str]:
-    # Keeps tech names intact: "asp.net", "c#", "c++", "node.js".
-    return re.findall(r"[a-z0-9+#]+(?:\.[a-z0-9+#]+)*", text.lower())
+def dimensions() -> int:
+    return int(embed(["dimension probe"]).shape[1])
 
 
-def bm25(query: str, docs: list[list[str]], k1: float = 1.5, b: float = 0.75) -> list[float]:
-    n = len(docs)
-    avg_len = sum(map(len, docs)) / n or 1
-    terms = set(tokens(query))
-    doc_sets = [set(d) for d in docs]
-    idf = {t: math.log(1 + (n - (df := sum(t in s for s in doc_sets)) + 0.5) / (df + 0.5)) for t in terms}
-    scores = []
-    for doc in docs:
-        score = 0.0
-        for t in terms:
-            if tf := doc.count(t):
-                score += idf[t] * tf * (k1 + 1) / (tf + k1 * (1 - b + b * len(doc) / avg_len))
-        scores.append(score)
-    return scores
-
-
-def rrf(*rankings: list[int]) -> list[int]:
-    """Reciprocal Rank Fusion of best-first index lists."""
-    fused: dict[int, float] = {}
+def rrf(*rankings: list) -> list:
+    """Reciprocal Rank Fusion of best-first id lists."""
+    fused: dict = {}
     for ranking in rankings:
         for rank, i in enumerate(ranking):
             fused[i] = fused.get(i, 0.0) + 1 / (RRF_K + rank + 1)
     return sorted(fused, key=fused.get, reverse=True)
 
 
-def match_requirements(rubric: list[dict], chunks: list[dict], chunk_vectors: np.ndarray, settings: dict) -> list[dict]:
+# (requirement text, query vector) -> (chunks best by meaning, chunks best by keywords); each chunk carries
+# _id, text, start, end, embedding, and keyword hits also a "keyword" score.
+Search = Callable[[str, list[float]], tuple[list[dict], list[dict]]]
+
+
+def _not_found(req: dict) -> dict:
+    return {"requirement_id": req["id"], "requirement": req["text"], "type": req["type"], "weight": req["weight"],
+            "verdict": "not_found", "match_score": 0.0, "similarity": 0.0, "quote": None, "start": None, "end": None,
+            "candidates": []}
+
+
+def match_requirements(rubric: list[dict], settings: dict, search: Search) -> list[dict]:
     query_vectors = embed([QUERY_PREFIX + r["text"] for r in rubric])
-    chunk_tokens = [tokens(c["text"]) for c in chunks]
     evidence = []
     for req, query_vector in zip(rubric, query_vectors):
-        similarity = chunk_vectors @ query_vector
-        vector_rank = [int(i) for i in np.argsort(-similarity)]
-        keyword = bm25(req["text"], chunk_tokens)
-        keyword_rank = sorted((i for i, s in enumerate(keyword) if s > 0), key=lambda i: -keyword[i])
-        top = rrf(vector_rank, keyword_rank)[:CANDIDATES_PER_REQUIREMENT]
+        by_meaning, by_keyword = search(req["text"], query_vector.tolist())
+        chunks = {c["_id"]: c for c in [*by_meaning, *by_keyword]}
+        top = rrf([c["_id"] for c in by_meaning], [c["_id"] for c in by_keyword])[:CANDIDATES_PER_REQUIREMENT]
+        if not top:
+            evidence.append(_not_found(req))
+            continue
 
+        keyword = {c["_id"]: c.get("keyword", 0.0) for c in by_keyword}
         logits = list(_reranker().rerank(req["text"], [chunks[i]["text"] for i in top]))
         candidates = sorted(
-            ({"chunk": chunks[i], "rerank": 1 / (1 + math.exp(-x)), "vector": float(similarity[i]), "keyword": keyword[i]}
+            ({"chunk": chunks[i], "rerank": 1 / (1 + math.exp(-x)), "keyword": keyword.get(i, 0.0),
+              # raw cosine, computed here so it means the same whichever search found the chunk
+              "vector": float(np.asarray(chunks[i]["embedding"], dtype=np.float32) @ query_vector)}
              for i, x in zip(top, logits)),
             key=lambda c: -c["rerank"],
         )
@@ -99,10 +96,11 @@ def match_requirements(rubric: list[dict], chunks: list[dict], chunk_vectors: np
         if p >= settings["met_threshold"]:
             verdict = "met"
         else:
-            # The cross-encoder is near 0 for paraphrases ("PostgreSQL tuning" vs "SQL Server tuning"),
-            # so "related but weaker" is judged on vector similarity instead.
+            # The cross-encoder undervalues paraphrases and skill lists ("AI & ML: LLMs, RAG" vs "AI & ML knowledge"),
+            # so meaning similarity can also confirm a match, or mark it as related but weaker.
             best = max(candidates, key=lambda c: c["vector"])
-            verdict = "partial" if best["vector"] >= settings["partial_similarity"] else "not_found"
+            verdict = ("met" if best["vector"] >= settings["met_similarity"]
+                       else "partial" if best["vector"] >= settings["partial_similarity"] else "not_found")
         evidence.append({
             "requirement_id": req["id"],
             "requirement": req["text"],

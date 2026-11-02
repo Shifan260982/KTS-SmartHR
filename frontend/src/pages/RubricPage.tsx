@@ -118,6 +118,7 @@ function RubricEditor({ job }: { job: Job }) {
 
 const FIELDS: { key: keyof JobSettings; label: string; hint: string; step: number; max: number }[] = [
   { key: 'met_threshold', label: 'Met threshold', hint: 'Reranker score (0–1) at or above which a requirement is met.', step: 0.05, max: 1 },
+  { key: 'met_similarity', label: 'Met by meaning', hint: 'Meaning similarity (0–1) at or above which a requirement is met even when the reranker is unsure.', step: 0.01, max: 1 },
   { key: 'partial_similarity', label: 'Partial threshold', hint: 'Meaning similarity (0–1) at or above which an unconfirmed match counts as partial.', step: 0.025, max: 1 },
   { key: 'evidence_weight', label: 'Evidence weight', hint: 'Share of the fit score from coverage; the rest comes from match strength.', step: 0.05, max: 1 },
   { key: 'strong_fit', label: 'Strong fit from', hint: 'Fit score (0–100) for the Strong fit band.', step: 1, max: 100 },

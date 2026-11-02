@@ -49,7 +49,7 @@ export function UploadPanel({ job, onClose }: { job: Job; onClose: () => void })
   const done = items.filter((i) => i.state === 'done').length
 
   return (
-    <aside className="sheet paper" aria-label="Upload resumes">
+    <aside className="sheet upload" aria-label="Upload resumes">
       <div className="section-head">
         <h2>Upload resumes</h2>
         <button type="button" className="btn btn-quiet" onClick={onClose} aria-label="Close upload panel"><X size={18} /></button>

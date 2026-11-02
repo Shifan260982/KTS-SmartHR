@@ -1,6 +1,6 @@
 """Seed a demo database with no company candidates: real JDs and rubrics, synthetic samples, anonymised Kaggle resumes.
 
-    SMARTHR_DB_PATH=data/demo.db .venv/Scripts/python -m uvicorn app.main:app --port 8000   # in one terminal
+    MONGODB_DB=smarthr_demo .venv/Scripts/python -m uvicorn app.main:app --port 8000   # in one terminal
     .venv/Scripts/python scripts/seed_demo.py
 """
 import json

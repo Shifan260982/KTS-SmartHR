@@ -33,14 +33,18 @@ function describe(detail: unknown): string {
   return 'Something went wrong. Please try again.'
 }
 
+const UNREACHABLE = 'Cannot reach the SmartHR server. Check that the API is running on port 8000.'
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response
   try {
     response = await fetch(`/api/v1${path}`, init)
   } catch {
-    throw new ApiError(0, 'Cannot reach the SmartHR server. Check that the API is running on port 8000.')
+    throw new ApiError(0, UNREACHABLE)
   }
   const body = await response.json().catch(() => null)
+  // The dev proxy answers 5xx with no JSON body when the API itself is down.
+  if (!response.ok && body === null && response.status >= 500) throw new ApiError(0, UNREACHABLE)
   if (!response.ok) throw new ApiError(response.status, describe(body?.detail))
   return body as T
 }
@@ -75,14 +79,6 @@ export const useApplication = (id: number | undefined) =>
     queryKey: ['application', id],
     queryFn: () => request<Application>(`/applications/${id}`),
     enabled: id !== undefined,
-  })
-
-export const useApplicationText = (id: number | undefined) =>
-  useQuery({
-    queryKey: ['application-text', id],
-    queryFn: () => request<{ text: string }>(`/applications/${id}/text`),
-    enabled: id !== undefined,
-    staleTime: Infinity, // a document's text never changes
   })
 
 /** After anything that rescores, every cached list and detail for the job is stale. */

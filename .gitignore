@@ -9,3 +9,5 @@ frontend/dist/
 .impeccable/build/
 .claude/
 .impeccable/
+# Secrets: the Atlas connection string lives here.
+.env

@@ -1,8 +1,9 @@
-from app.matching import bm25, compute_score, rrf, tokens
+from app.matching import compute_score, embed, match_requirements, rrf
+from app import reader
 from app.reader import chunk
 from app.schemas import Requirement
 
-SETTINGS = {"met_threshold": 0.5, "partial_similarity": 0.6, "evidence_weight": 0.8, "strong_fit": 75, "floor": 40}
+SETTINGS = {"met_threshold": 0.5, "met_similarity": 0.74, "partial_similarity": 0.6, "evidence_weight": 0.8, "strong_fit": 75, "floor": 40}
 
 
 def _evidence(rid, kind, weight, verdict, score=0.78):
@@ -33,14 +34,62 @@ def test_chunks_keep_exact_offsets_and_cover_text():
     assert "Skills: C#, SQL Server" in chunks[-1]["text"]
 
 
-def test_tokens_keep_tech_names():
-    assert tokens("ASP.NET Core, C#, C++ and Node.js.") == ["asp.net", "core", "c#", "c++", "and", "node.js"]
+RESUME = """PRIYA SHARMA
+AI INTERN | APPLIED AI
+PROFESSIONAL PROFILE
+Master's candidate in Artificial Intelligence building Python-based LLM and agentic
+workflows with document processing and human-
+in-the-loop controls.
+CORE TECHNICAL SKILLS
+AI & Machine Learning: Python, scikit-learn, LLM workflows, SBERT, BM25,
+TF-IDF, Cosine Similarity
+Software & Integration: Flask, REST/JSON APIs, SQL/SQLite
+SELECTED AI PROJECTS
+• Evaluated the pipeline with ranking metrics including nDCG@5 of
+0.9279.
+EDUCATION
+BTech, Electrical & Electronics Engineering - CUSAT, India | 2018 - 2022
+"""
 
 
-def test_bm25_ranks_keyword_match_first():
-    docs = [tokens("designed logos"), tokens("tuned SQL Server queries"), tokens("sql")]
-    scores = bm25("SQL Server query tuning", docs)
-    assert scores[0] == 0 and scores[1] > scores[2] > 0
+def test_chunks_follow_sentences_labels_and_sections_not_visual_lines():
+    chunks = reader.chunk(RESUME)
+    texts = [" ".join(c["text"].split()) for c in chunks]
+    for c in chunks:
+        assert RESUME[c["start"]:c["end"]] == c["text"]
+    # a wrapped sentence is one unit; a skills label never swallows the next label
+    assert any(t.startswith("Master's candidate") and t.endswith("in-the-loop controls.") for t in texts)
+    assert "AI & Machine Learning: Python, scikit-learn, LLM workflows, SBERT, BM25, TF-IDF, Cosine Similarity" in texts
+    assert "Software & Integration: Flask, REST/JSON APIs, SQL/SQLite" in texts
+    assert any(t.endswith("nDCG@5 of 0.9279.") for t in texts)  # "0.9279." is not a numbered bullet
+    education = next(c for c in chunks if c["text"].startswith("BTech"))
+    assert education["section"] == "Education"
+    assert reader.embedding_text(education).startswith("Education: BTech")
+    # the candidate's name above the first section never becomes embedding context
+    assert all("Priya" not in c["section"] and "PRIYA" not in c["section"] for c in chunks)
+
+
+def test_match_requirements_fuses_search_hits_and_quotes_the_best_chunk():
+    lines = ["Built REST APIs in ASP.NET Core for payments.", "Designed logos and packaging for brands."]
+    chunks = [{"_id": i, "text": t, "start": i * 100, "end": i * 100 + len(t), "embedding": v.tolist()}
+              for i, (t, v) in enumerate(zip(lines, embed(lines)))]
+    calls = []
+
+    def search(text, vector):  # stands in for Atlas: meaning hits, then keyword hits with a BM25 score
+        calls.append(text)
+        return chunks, [{**chunks[0], "keyword": 3.2}]
+
+    rubric = [{"id": "R1", "text": "Builds REST APIs", "type": "must", "weight": 5}]
+    [evidence] = match_requirements(rubric, SETTINGS, search)
+    assert calls == ["Builds REST APIs"]
+    assert evidence["verdict"] == "met" and evidence["quote"] == lines[0] and evidence["start"] == 0
+    assert evidence["candidates"][0]["keyword_score"] == 3.2
+
+
+def test_no_search_hits_means_not_found_not_an_error():
+    rubric = [{"id": "R1", "text": "Kubernetes", "type": "nice", "weight": 2}]
+    [evidence] = match_requirements(rubric, SETTINGS, lambda text, vector: ([], []))
+    assert evidence["verdict"] == "not_found" and evidence["quote"] is None
 
 
 def test_rrf_prefers_items_ranked_well_in_both_lists():

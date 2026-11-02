@@ -31,6 +31,7 @@ class Requirement(Strict):
 
 class JobSettings(Strict):
     met_threshold: float = Field(0.5, ge=0, le=1, description="Reranker score at or above which a requirement is 'met'")
+    met_similarity: float = Field(0.74, ge=0, le=1, description="Meaning similarity at or above which a requirement is 'met' even when the reranker is unsure")
     partial_similarity: float = Field(0.6, ge=0, le=1, description="Vector similarity at or above which an unconfirmed match is 'partial'")
     evidence_weight: float = Field(0.8, ge=0, le=1, description="Share of the fit score from coverage; the rest is semantic")
     strong_fit: float = Field(75, ge=0, le=100)
