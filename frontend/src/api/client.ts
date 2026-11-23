@@ -112,7 +112,20 @@ export const useApproveRubric = (jobId: number) =>
 export const useSaveSettings = (jobId: number) =>
   useJobMutation(jobId, (settings: JobSettings) => request<Job>(`/jobs/${jobId}/settings`, json('PUT', settings)))
 
-export type JobDraft = components['schemas']['JobDraft']
+/** TEMPORARY: wipes the job's analysed resumes so they can be re-uploaded against a new model. */
+export const useDeleteApplications = (jobId: number) => {
+  const client = useQueryClient()
+  return useMutation({
+    mutationFn: () => request<null>(`/jobs/${jobId}/applications`, json('DELETE')),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: ['jobs'] })
+      client.invalidateQueries({ queryKey: ['applications', jobId] })
+      client.invalidateQueries({ queryKey: ['application'] })
+    },
+  })
+}
+
+export type JobDraft =components['schemas']['JobDraft']
 
 export function extractJobDescription(file: File): Promise<JobDraft> {
   const form = new FormData()
@@ -122,6 +135,28 @@ export function extractJobDescription(file: File): Promise<JobDraft> {
 
 export const saveRubric = (jobId: number, requirements: Requirement[]) =>
   request<Job>(`/jobs/${jobId}/rubric`, json('PUT', { requirements }))
+
+export type Slot = components['schemas']['Slot']
+export type EmailIn = components['schemas']['EmailIn']
+export type InterviewIn = components['schemas']['InterviewIn']
+
+/** SmartHR's mailbox (null when Microsoft 365 is not set up) and test mode (redirect_to). */
+export const useOutreachSettings = () =>
+  useQuery({ queryKey: ['outreach-settings'], queryFn: () => request<components['schemas']['OutreachSettings']>('/outreach/settings') })
+
+export const getFreeSlots = (interviewer: string, minutes: number) =>
+  request<Slot[]>(`/calendar/free-slots?interviewer=${encodeURIComponent(interviewer)}&minutes=${minutes}`)
+
+function useOutreach<TBody>(applicationId: number, path: string) {
+  const client = useQueryClient()
+  return useMutation({
+    mutationFn: (body: TBody) => request<Application>(`/applications/${applicationId}${path}`, json('POST', body)),
+    onSuccess: (app) => client.setQueryData(['application', applicationId], app),
+  })
+}
+
+export const useSendShortlisted = (applicationId: number) => useOutreach<EmailIn>(applicationId, '/emails:shortlisted')
+export const useScheduleInterview = (applicationId: number) => useOutreach<InterviewIn>(applicationId, '/interviews')
 
 export function uploadResume(jobId: number, file: File): Promise<Application> {
   const form = new FormData()

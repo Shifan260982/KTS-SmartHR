@@ -11,3 +11,10 @@ frontend/dist/
 .impeccable/
 # Secrets: the Atlas connection string lives here.
 .env
+HANDOFF.md
+# Installer build output (packaging/build.ps1)
+build/
+
+# Microsoft 365 certificate private key (scripts/make_cert.py); never commit
+secrets/
+*.pem

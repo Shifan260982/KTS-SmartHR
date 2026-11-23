@@ -1,6 +1,6 @@
 import { Link, useParams, useSearchParams } from 'react-router-dom'
-import { AlertTriangle, ChevronDown, ListChecks, Upload } from 'lucide-react'
-import { useApplications, useJob } from '../api/client'
+import { AlertTriangle, ChevronDown, ListChecks, Trash2, Upload } from 'lucide-react'
+import { useApplications, useDeleteApplications, useJob } from '../api/client'
 import { BAND_LABEL, bandOf, displayName } from '../lib/bands'
 import { Reasons } from '../components/Reasons'
 import { UploadPanel } from '../components/UploadPanel'
@@ -10,6 +10,7 @@ export function JobPage() {
   const [params, setParams] = useSearchParams()
   const { data: job, isError: jobError, error } = useJob(jobId)
   const { data: apps, isLoading } = useApplications(jobId)
+  const wipe = useDeleteApplications(jobId)
 
   const open = params.get('c') ? Number(params.get('c')) : undefined
   const uploading = params.get('panel') === 'upload'
@@ -35,6 +36,13 @@ export function JobPage() {
           </div>
         </div>
         <div className="actions">
+          {/* TEMPORARY: remove with DELETE /jobs/{id}/applications */}
+          {!!apps?.length && (
+            <button type="button" className="btn btn-quiet" disabled={wipe.isPending}
+              onClick={() => window.confirm(`Delete all ${apps.length} analysed resumes for this job? This cannot be undone.`) && wipe.mutate()}>
+              <Trash2 size={17} aria-hidden="true" /> {wipe.isPending ? 'Deleting…' : 'Delete all resumes'}
+            </button>
+          )}
           <Link to={`/jobs/${job.id}/rubric`} className="btn"><ListChecks size={17} aria-hidden="true" /> Checklist</Link>
           <button type="button" className="btn btn-primary" onClick={() => set('panel', uploading ? undefined : 'upload')} aria-expanded={uploading}>
             <Upload size={17} aria-hidden="true" /> Upload resumes
@@ -70,7 +78,7 @@ export function JobPage() {
             return (
               <li key={app.id} className="candidate" data-open={expanded}>
                 <button type="button" className="candidate-row" aria-expanded={expanded} aria-controls={panelId} onClick={() => set('c', expanded ? undefined : String(app.id))}>
-                  <span className="candidate-name" title={app.filename}>{displayName(app.filename)}</span>
+                  <span className="candidate-name" title={app.filename}>{app.candidate_name ?? displayName(app.filename)}</span>
                   <span className={`candidate-band band-${band}`}>{BAND_LABEL[band]}</span>
                   {app.fit_score != null
                     ? <span className="fit-box" aria-label={`Score ${Math.round(app.fit_score)} out of 100`}>{Math.round(app.fit_score)}</span>

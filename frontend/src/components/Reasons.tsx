@@ -1,6 +1,9 @@
 import { useApplication, type Job } from '../api/client'
 import { VERDICT_LABEL } from '../lib/bands'
 import { MarkGlyph } from './Marks'
+import { Outreach } from './Outreach'
+
+const clean = (quote: string | null | undefined) => quote?.replace(/\s+/g, ' ').trim().replace(/^[-–•*]\s+/, '')
 
 /** Why a candidate scored as they did: each requirement's verdict and the exact resume line behind it. */
 export function Reasons({ applicationId, job }: { applicationId: number; job: Job }) {
@@ -24,6 +27,13 @@ export function Reasons({ applicationId, job }: { applicationId: number; job: Jo
 
   return (
     <div className="reasons">
+      {app.form.length > 0 && (
+        <dl className="form-details" aria-label="Application form">
+          {app.form.map((f, i) => (
+            <div key={i}><dt>{f.label}</dt><dd>{f.value}</dd></div>
+          ))}
+        </dl>
+      )}
       <ul className="reason-list">
         {found.map((e) => (
           <li key={e.requirement_id}>
@@ -33,7 +43,19 @@ export function Reasons({ applicationId, job }: { applicationId: number; job: Jo
                 {e.requirement}
                 <span className="reason-tag">{VERDICT_LABEL[e.verdict]}{mustIds.has(e.requirement_id) ? ' · must-have' : ''}</span>
               </p>
-              <blockquote className="reason-quote">{e.quote?.replace(/\s+/g, ' ').trim().replace(/^[-–•*]\s+/, '')}</blockquote>
+              {e.parts.length > 1 ? (
+                e.parts.map((p) => (
+                  <div key={p.text} className="reason-part">
+                    <span className="reason-part-label">{p.text}{p.verdict !== 'met' && ` · ${VERDICT_LABEL[p.verdict]}`}</span>
+                    {p.quote
+                      ? <blockquote className="reason-quote">{clean(p.quote)}</blockquote>
+                      : <p className="reason-part-missing">No line in the resume shows this.</p>}
+                  </div>
+                ))
+              ) : (
+                e.quote && <blockquote className="reason-quote">{clean(e.quote)}</blockquote>
+              )}
+              {e.reason && <p className="reason-why">{e.reason}</p>}
             </div>
           </li>
         ))}
@@ -47,6 +69,7 @@ export function Reasons({ applicationId, job }: { applicationId: number; job: Jo
       <p className="reasons-foot">
         Must-haves {mustMet}/{mustIds.size} · {found.filter((e) => e.verdict === 'met').length} of {evidence.length} met · checklist v{app.rubric_version}
       </p>
+      <Outreach app={app} job={job} />
     </div>
   )
 }

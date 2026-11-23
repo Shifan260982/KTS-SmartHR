@@ -2,8 +2,15 @@ fastapi
 uvicorn[standard]
 python-multipart
 fastembed
+# NLI judge runs on these directly (they also come with fastembed)
+onnxruntime
+tokenizers
+huggingface_hub
 pymupdf
 python-docx
 pymongo>=4.10
 python-dotenv
 pytest
+# Microsoft 365 mailbox (app-only, certificate) and time zones on Windows
+msal==1.31.1
+tzdata

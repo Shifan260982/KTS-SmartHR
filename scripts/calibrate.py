@@ -5,6 +5,8 @@ Raw scores are cached in data/calibration/ (git-ignored, contains personal data)
 
     .venv/Scripts/python scripts/calibrate.py collect BAAI/bge-small-en-v1.5 Xenova/ms-marco-MiniLM-L-6-v2
     .venv/Scripts/python scripts/calibrate.py report
+    .venv/Scripts/python scripts/calibrate.py collect-nli   # current models + NLI judge, whole requirement and split parts
+    .venv/Scripts/python scripts/calibrate.py report-nli
 """
 import json
 import math
@@ -91,6 +93,96 @@ def collect(embed_model: str, rerank_model: str) -> None:
     print(f"\nsaved {tag}")
 
 
+def _top(query: str, q: np.ndarray, vectors: np.ndarray, tokens: list[list[str]]) -> tuple[list[int], np.ndarray]:
+    """Emulated Atlas hybrid search for one query: RRF of cosine top-k and BM25 top-k."""
+    cosine = vectors @ q
+    keyword = _bm25(query, tokens)
+    by_keyword = [i for i in np.argsort(-np.array(keyword))[:TOP_K] if keyword[i] > 0]
+    fused: dict = {}
+    for ranking in (list(np.argsort(-cosine)[:TOP_K]), by_keyword):
+        for rank, i in enumerate(ranking):
+            fused[int(i)] = fused.get(int(i), 0) + 1 / (61 + rank)
+    return sorted(fused, key=fused.get, reverse=True)[:TOP_K], cosine
+
+
+def collect_nli() -> None:
+    from app import matching
+    rows = []
+    items = resumes()
+    for n, (folder, name, text) in enumerate(items, 1):
+        chunks = reader.chunk(text)
+        premises = [reader.embedding_text(c) for c in chunks]
+        vectors = matching.embed(premises)
+        tokens = [_tokens(t) for t in premises]
+        for spec in SPECS:
+            for req in spec["requirements"]:
+                parts = []
+                for part in dict.fromkeys([req["text"], *matching.split_requirement(req["text"])]):
+                    q = matching.embed([QUERY_PREFIX + part])[0]
+                    top, cosine = _top(part, q, vectors, tokens)
+                    logits = list(matching._reranker().rerank(part, [chunks[i]["text"] for i in top]))
+                    entail = matching.entailment([premises[i] for i in top], matching.hypothesis(part))
+                    parts.append({"text": part, "cands": [{"p": 1 / (1 + math.exp(-x)), "sim": float(cosine[i]), "e": e}
+                                                          for i, x, e in zip(top, logits, entail)]})
+                rows.append({"folder": folder, "file": name, "job": spec["code"], "req": req["id"], "type": req["type"],
+                             "weight": req["weight"], "whole": parts[0],
+                             "parts": parts[1:] or parts[:1]})
+        print(f"\r{n}/{len(items)}", end="", flush=True)
+    OUT.mkdir(parents=True, exist_ok=True)
+    (OUT / "nli.json").write_text(json.dumps(rows), encoding="utf-8")
+    print("\nsaved nli")
+
+
+def nli_verdict(row: dict, use_parts: bool, rule: str, t: float) -> tuple[str, float]:
+    """rule 'nli': entailment alone; 'nli+sim': entailment, or the current reranker/similarity rule."""
+    verdicts, scores = [], []
+    for part in (row["parts"] if use_parts else [row["whole"]]):
+        c = part["cands"]
+        best_e, best_p, best_sim = max(x["e"] for x in c), max(x["p"] for x in c), max(x["sim"] for x in c)
+        met = best_e >= t or (rule == "nli+sim" and (best_p >= 0.5 or best_sim >= 0.72))
+        verdicts.append("met" if met else "partial" if best_sim >= 0.66 else "not_found")
+        scores.append(max(best_e, best_p))
+    if all(v == "met" for v in verdicts):
+        return "met", min(scores)
+    return ("partial" if any(v != "not_found" for v in verdicts) else "not_found"), min(scores)
+
+
+def report_nli() -> None:
+    rows = json.loads((OUT / "nli.json").read_text(encoding="utf-8"))
+    value = {"met": 1, "partial": 0.5, "not_found": 0}
+    for spec in SPECS:
+        own = spec["resume_folder"]
+        job_rows = [r for r in rows if r["job"] == spec["code"]]
+        by_file: dict = {}
+        for r in job_rows:
+            by_file.setdefault((r["folder"], r["file"]), []).append(r)
+        print(f"== {spec['code']} (own folder: {own})")
+        for req in spec["requirements"]:
+            mine = [r for r in job_rows if r["req"] == req["id"]]
+            parts = " | ".join(p["text"] for p in mine[0]["parts"])
+            for use_parts in (False, True):
+                rate = lambda folder_is_own: np.mean([nli_verdict(r, use_parts, "nli", 0.5)[0] == "met" for r in mine
+                                                      if (r["folder"] == own) == folder_is_own])
+                print(f"   {req['id']:<4}{req['type']:<5}{'parts' if use_parts else 'whole'}  nli>=.5 met: own {rate(True):4.0%} other {rate(False):4.0%}"
+                      f"  {(parts if use_parts else req['text'])[:70]}")
+        for use_parts in (False, True):
+            for rule in ("nli", "nli+sim"):
+                for t in (0.5, 0.7, 0.9):
+                    scored = {}
+                    for k, rs in by_file.items():
+                        vs = [nli_verdict(r, use_parts, rule, t) for r in rs]
+                        total = sum(r["weight"] for r in rs)
+                        cov = sum(r["weight"] * value[v] for r, (v, _) in zip(rs, vs)) / total
+                        sem = sum(r["weight"] * s for r, (_, s) in zip(rs, vs)) / total
+                        scored[k] = (100 * (0.8 * cov + 0.2 * sem),
+                                     all(v == "met" for r, (v, _) in zip(rs, vs) if r["type"] == "must"))
+                    pos = [s for (f, _), (s, _) in scored.items() if f == own]
+                    neg = [s for (f, _), (s, _) in scored.items() if f != own]
+                    mp = np.mean([ok for (f, _), (_, ok) in scored.items() if f == own])
+                    mn = np.mean([ok for (f, _), (_, ok) in scored.items() if f != own])
+                    print(f"   {'parts' if use_parts else 'whole'} {rule:<8} t={t}  AUC {auc(pos, neg):.3f}  all must-haves met: own {mp:5.0%}  other {mn:5.0%}")
+
+
 def verdict(cands: list[dict], met_p: float, met_sim: float, partial_sim: float) -> tuple[str, float]:
     best_p = max(cands, key=lambda c: c["p"])
     best_sim = max(c["sim"] for c in cands)
@@ -146,5 +238,9 @@ def report() -> None:
 if __name__ == "__main__":
     if sys.argv[1] == "collect":
         collect(sys.argv[2], sys.argv[3])
+    elif sys.argv[1] == "collect-nli":
+        collect_nli()
+    elif sys.argv[1] == "report-nli":
+        report_nli()
     else:
         report()

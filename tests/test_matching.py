@@ -1,9 +1,9 @@
-from app.matching import compute_score, embed, match_requirements, rrf
+from app.matching import compute_score, embed, match_requirements, rrf, split_requirement
 from app import reader
 from app.reader import chunk
 from app.schemas import Requirement
 
-SETTINGS = {"met_threshold": 0.5, "met_similarity": 0.74, "partial_similarity": 0.6, "evidence_weight": 0.8, "strong_fit": 75, "floor": 40}
+SETTINGS = {"entail_threshold": 0.5, "met_threshold": 0.5, "met_similarity": 0.72, "partial_similarity": 0.66, "evidence_weight": 0.8, "strong_fit": 75, "floor": 40}
 
 
 def _evidence(rid, kind, weight, verdict, score=0.78):
@@ -52,6 +52,11 @@ BTech, Electrical & Electronics Engineering - CUSAT, India | 2018 - 2022
 """
 
 
+def test_bullet_glyph_on_its_own_line_joins_the_next_line():
+    text = "Technical Skills\n•\nLanguages: Python, Java\n•\nFrameworks: React, Flutter\n"
+    assert [c["text"] for c in chunk(text)] == ["•\nLanguages: Python, Java", "•\nFrameworks: React, Flutter"]
+
+
 def test_chunks_follow_sentences_labels_and_sections_not_visual_lines():
     chunks = reader.chunk(RESUME)
     texts = [" ".join(c["text"].split()) for c in chunks]
@@ -90,6 +95,38 @@ def test_no_search_hits_means_not_found_not_an_error():
     rubric = [{"id": "R1", "text": "Kubernetes", "type": "nice", "weight": 2}]
     [evidence] = match_requirements(rubric, SETTINGS, lambda text, vector: ([], []))
     assert evidence["verdict"] == "not_found" and evidence["quote"] is None
+
+
+def test_compound_requirement_needs_every_part_and_quotes_each():
+    lines = ["Programming Languages: Python, C, SQL", "AI/ML: TensorFlow, Keras, CNN, NumPy, Pandas",
+             "Designed logos and packaging for brands."]
+    chunks = [{"_id": i, "text": t, "section": "Skills", "start": i * 100, "end": i * 100 + len(t), "embedding": v.tolist()}
+              for i, (t, v) in enumerate(zip(lines, embed(lines)))]
+    rubric = [{"id": "R1", "text": "Familiarity with Python and libraries such as NumPy, Pandas, or TensorFlow",
+               "type": "must", "weight": 5}]
+
+    [evidence] = match_requirements(rubric, SETTINGS, lambda text, vector: (chunks, []))
+    assert evidence["verdict"] == "met"
+    assert [p["text"] for p in evidence["parts"]] == ["Familiarity with Python",
+                                                       "Familiarity with libraries such as NumPy, Pandas, or TensorFlow"]
+    assert [p["quote"] for p in evidence["parts"]] == lines[:2]
+
+    [evidence] = match_requirements(rubric, SETTINGS, lambda text, vector: (chunks[:1] + chunks[2:], []))
+    assert evidence["verdict"] != "met"  # Python alone does not prove the libraries part
+
+
+def test_split_requirement_only_on_real_conjunctions():
+    assert split_requirement("Familiarity with Python and libraries such as NumPy, Pandas, or TensorFlow") == [
+        "Familiarity with Python", "Familiarity with libraries such as NumPy, Pandas, or TensorFlow"]
+    assert split_requirement("Experience building REST APIs and deploying them to Azure") == [
+        "Experience building REST APIs", "deploying them to Azure"]
+    for whole in ("Backend development in C# and .NET Core",  # short parts match too loosely alone
+                  "Entity Framework with SQL databases", "Unit testing and integration testing",
+                  "Data pre-processing, cleaning and analysis",  # one noun list
+                  "Developing and deploying machine learning models",  # verb pair
+                  "Excellent communication skills (verbal and written)",  # inside brackets
+                  "Experience with Python", "Basic AI & ML knowledge"):
+        assert split_requirement(whole) == [whole]
 
 
 def test_rrf_prefers_items_ranked_well_in_both_lists():

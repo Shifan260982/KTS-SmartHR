@@ -152,7 +152,8 @@ export interface paths {
         get: operations["list_applications_api_v1_jobs__job_id__applications_get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** TEMPORARY: delete every application for this job, plus resumes no other job uses */
+        delete: operations["delete_applications_api_v1_jobs__job_id__applications_delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -209,6 +210,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/outreach/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The SmartHR mailbox (null when not set up) and test mode (redirect_to) */
+        get: operations["outreach_settings_api_v1_outreach_settings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/calendar/free-slots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Next free slots in the interviewer's Outlook calendar (working hours, coming week) */
+        get: operations["free_slots_api_v1_calendar_free_slots_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/applications/{application_id}/emails:shortlisted": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send the shortlisted email from the SmartHR mailbox (once per application) */
+        post: operations["send_shortlisted_api_v1_applications__application_id__emails_shortlisted_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/applications/{application_id}/interviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Book the first-round interview as a Teams meeting from the SmartHR mailbox; invites candidate and interviewer */
+        post: operations["schedule_interview_api_v1_applications__application_id__interviews_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mailbox": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Whether SmartHR can sign in and reach its mailbox */
+        get: operations["mailbox_status_api_v1_mailbox_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mailbox:check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Read the inbox now instead of waiting for the next scheduled check */
+        post: operations["check_mailbox_api_v1_mailbox_check_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -223,6 +326,8 @@ export interface components {
             document_id: number;
             /** Filename */
             filename: string;
+            /** Candidate Name */
+            candidate_name?: string | null;
             /**
              * Status
              * @enum {string}
@@ -250,6 +355,15 @@ export interface components {
             models: {
                 [key: string]: unknown;
             } | null;
+            /** Candidate Email */
+            candidate_email?: string | null;
+            /**
+             * Form
+             * @default []
+             */
+            form: components["schemas"]["FormField"][];
+            /** @default {} */
+            outreach: components["schemas"]["Outreach"];
         };
         /** ApplicationSummary */
         ApplicationSummary: {
@@ -261,6 +375,8 @@ export interface components {
             document_id: number;
             /** Filename */
             filename: string;
+            /** Candidate Name */
+            candidate_name?: string | null;
             /**
              * Status
              * @enum {string}
@@ -293,12 +409,16 @@ export interface components {
         };
         /** Candidate */
         Candidate: {
+            /** Part */
+            part?: string | null;
             /** Text */
             text: string;
             /** Start */
             start: number;
             /** End */
             end: number;
+            /** Entail Score */
+            entail_score?: number | null;
             /** Rerank Score */
             rerank_score: number;
             /** Vector Similarity */
@@ -310,6 +430,18 @@ export interface components {
         DocumentText: {
             /** Text */
             text: string;
+        };
+        /** EmailIn */
+        EmailIn: {
+            /**
+             * To
+             * @example candidate@example.com
+             */
+            to: string;
+            /** Subject */
+            subject: string;
+            /** Body */
+            body: string;
         };
         /** Evidence */
         Evidence: {
@@ -339,13 +471,85 @@ export interface components {
             start: number | null;
             /** End */
             end: number | null;
+            /**
+             * Parts
+             * @default []
+             */
+            parts: components["schemas"]["Part"][];
+            /** Reason */
+            reason?: string | null;
             /** Candidates */
             candidates: components["schemas"]["Candidate"][];
+        };
+        /** FormField */
+        FormField: {
+            /** Label */
+            label: string;
+            /** Value */
+            value: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** Interview */
+        Interview: {
+            /** To */
+            to: string;
+            /** Sent At */
+            sent_at: string;
+            /**
+             * Test
+             * @default false
+             */
+            test: boolean;
+            /** Delivered To */
+            delivered_to?: string | null;
+            /** Interviewer */
+            interviewer?: string | null;
+            /**
+             * Start
+             * Format: date-time
+             */
+            start: string;
+            /**
+             * End
+             * Format: date-time
+             */
+            end: string;
+            /** Event Id */
+            event_id: string;
+            /** Join Url */
+            join_url: string | null;
+        };
+        /** InterviewIn */
+        InterviewIn: {
+            /**
+             * To
+             * @example candidate@example.com
+             */
+            to: string;
+            /** Subject */
+            subject: string;
+            /** Body */
+            body: string;
+            /**
+             * Interviewer
+             * @description The HR interviewer, also invited
+             */
+            interviewer: string;
+            /**
+             * Start
+             * Format: date-time
+             * @description With a time zone offset, e.g. 2026-11-20T10:00:00+05:30
+             */
+            start: string;
+            /**
+             * End
+             * Format: date-time
+             */
+            end: string;
         };
         /** JobCreate */
         JobCreate: {
@@ -363,8 +567,10 @@ export interface components {
             description: string;
             /**
              * @default {
+             *       "entail_threshold": 0.9,
              *       "met_threshold": 0.5,
-             *       "partial_similarity": 0.6,
+             *       "met_similarity": 0.72,
+             *       "partial_similarity": 0.66,
              *       "evidence_weight": 0.8,
              *       "strong_fit": 75,
              *       "floor": 40
@@ -408,15 +614,27 @@ export interface components {
         /** JobSettings */
         JobSettings: {
             /**
+             * Entail Threshold
+             * @description Entailment probability at or above which a resume line proves a requirement part
+             * @default 0.9
+             */
+            entail_threshold: number;
+            /**
              * Met Threshold
              * @description Reranker score at or above which a requirement is 'met'
              * @default 0.5
              */
             met_threshold: number;
             /**
+             * Met Similarity
+             * @description Meaning similarity at or above which a requirement is 'met' even when the reranker is unsure
+             * @default 0.72
+             */
+            met_similarity: number;
+            /**
              * Partial Similarity
              * @description Vector similarity at or above which an unconfirmed match is 'partial'
-             * @default 0.6
+             * @default 0.66
              */
             partial_similarity: number;
             /**
@@ -436,6 +654,28 @@ export interface components {
              */
             floor: number;
         };
+        /** MailboxCheck */
+        MailboxCheck: {
+            /** Emails */
+            emails: number;
+            /** Applications */
+            applications: number;
+            /** Needs Attention */
+            needs_attention: number;
+            /** Retry Later */
+            retry_later: number;
+        };
+        /** MailboxStatus */
+        MailboxStatus: {
+            /** Mailbox */
+            mailbox: string | null;
+            /** Connected */
+            connected: boolean;
+            /** Detail */
+            detail: string | null;
+            /** Check Every Minutes */
+            check_every_minutes: number | null;
+        };
         /** Mark */
         Mark: {
             /** Requirement Id */
@@ -445,6 +685,39 @@ export interface components {
              * @enum {string}
              */
             verdict: "met" | "partial" | "not_found";
+        };
+        /** Outreach */
+        Outreach: {
+            shortlisted?: components["schemas"]["Sent"] | null;
+            interview?: components["schemas"]["Interview"] | null;
+        };
+        /** OutreachSettings */
+        OutreachSettings: {
+            /** Mailbox */
+            mailbox: string | null;
+            /** Redirect To */
+            redirect_to: string | null;
+        };
+        /**
+         * Part
+         * @description One part of a compound requirement ("Python" in "Python and libraries such as NumPy") and the line proving it.
+         */
+        Part: {
+            /** Text */
+            text: string;
+            /**
+             * Verdict
+             * @enum {string}
+             */
+            verdict: "met" | "partial" | "not_found";
+            /** Score */
+            score: number;
+            /** Quote */
+            quote: string | null;
+            /** Start */
+            start: number | null;
+            /** End */
+            end: number | null;
         };
         /** Requirement */
         Requirement: {
@@ -470,6 +743,33 @@ export interface components {
         RubricUpdate: {
             /** Requirements */
             requirements: components["schemas"]["Requirement"][];
+        };
+        /** Sent */
+        Sent: {
+            /** To */
+            to: string;
+            /** Sent At */
+            sent_at: string;
+            /**
+             * Test
+             * @default false
+             */
+            test: boolean;
+            /** Delivered To */
+            delivered_to?: string | null;
+        };
+        /** Slot */
+        Slot: {
+            /**
+             * Start
+             * Format: date-time
+             */
+            start: string;
+            /**
+             * End
+             * Format: date-time
+             */
+            end: string;
         };
         /** ValidationError */
         ValidationError: {
@@ -771,6 +1071,13 @@ export interface operations {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
+            /** @description Search index still catching up; retry the upload */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     list_applications_api_v1_jobs__job_id__applications_get: {
@@ -796,6 +1103,35 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ApplicationSummary"][];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_applications_api_v1_jobs__job_id__applications_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -897,6 +1233,168 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    outreach_settings_api_v1_outreach_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OutreachSettings"];
+                };
+            };
+        };
+    };
+    free_slots_api_v1_calendar_free_slots_get: {
+        parameters: {
+            query: {
+                interviewer: string;
+                minutes?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Slot"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_shortlisted_api_v1_applications__application_id__emails_shortlisted_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    schedule_interview_api_v1_applications__application_id__interviews_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InterviewIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mailbox_status_api_v1_mailbox_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailboxStatus"];
+                };
+            };
+        };
+    };
+    check_mailbox_api_v1_mailbox_check_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailboxCheck"];
                 };
             };
         };

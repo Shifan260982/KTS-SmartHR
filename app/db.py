@@ -100,7 +100,7 @@ def _ensure_search_indexes(db: Database, dimensions: int) -> None:
 
 def search_chunks(db: Database, document_id: int, text: str, vector: list[float], limit: int) -> tuple[list[dict], list[dict]]:
     """Best chunks of one resume for one requirement: (by meaning via Vector Search, by keywords via Atlas Search)."""
-    projection = {"text": 1, "start": 1, "end": 1, "embedding": 1}
+    projection = {"text": 1, "section": 1, "start": 1, "end": 1, "embedding": 1}
     by_meaning = list(db.resume_chunks.aggregate([
         {"$vectorSearch": {"index": VECTOR_INDEX, "path": "embedding", "queryVector": vector, "numCandidates": 100,
                            "limit": limit, "filter": {"document_id": document_id}}},

@@ -117,6 +117,7 @@ function RubricEditor({ job }: { job: Job }) {
 }
 
 const FIELDS: { key: keyof JobSettings; label: string; hint: string; step: number; max: number }[] = [
+  { key: 'entail_threshold', label: 'Proof threshold', hint: 'How sure (0–1) the model must be that a resume line proves a requirement before it counts as met.', step: 0.05, max: 1 },
   { key: 'met_threshold', label: 'Met threshold', hint: 'Reranker score (0–1) at or above which a requirement is met.', step: 0.05, max: 1 },
   { key: 'met_similarity', label: 'Met by meaning', hint: 'Meaning similarity (0–1) at or above which a requirement is met even when the reranker is unsure.', step: 0.01, max: 1 },
   { key: 'partial_similarity', label: 'Partial threshold', hint: 'Meaning similarity (0–1) at or above which an unconfirmed match counts as partial.', step: 0.025, max: 1 },

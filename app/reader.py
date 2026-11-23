@@ -59,7 +59,7 @@ def _docx_text(data: bytes) -> str:
     return "\n".join(line.strip() for line in lines if line.strip())
 
 
-CHUNKER_VERSION = 2  # bump when chunking changes; stored chunks are rebuilt on the next start
+CHUNKER_VERSION = 3  # bump when chunking changes; stored chunks are rebuilt on the next start
 SECTION_WORDS = re.compile(
     r"^(professional |personal |career |core |technical |key |selected |academic |work |relevant )*"
     r"(summary|profile|objective|about me|experience|work history|employment|education|qualifications?|skills|"
@@ -100,7 +100,9 @@ def chunk(text: str) -> list[dict]:
         current = units[-1] if units else None
         unfinished = current is not None and not re.search(r"[.!?]\s*$", text[current[0]:current[1]])
         new_unit = BULLET_START.match(line) or LABEL_START.match(line) or ENTRY_LINE.search(line)
-        if current is not None and unfinished and not new_unit:
+        # some PDFs put the bullet glyph on its own line; it belongs to the line after it
+        bare_bullet = current is not None and not re.search(r"\w", text[current[0]:current[1]])
+        if current is not None and (bare_bullet or (unfinished and not new_unit)):
             current[1] = match.end()  # wrapped line: continue the same sentence or bullet
         else:
             units.append([start, match.end(), section])
